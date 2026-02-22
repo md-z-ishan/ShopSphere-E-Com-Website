@@ -349,7 +349,8 @@ If you find this project helpful, please:
 
 ## 📸 Screenshots
 
-Screenshots of the application are available in the `/screenshot` folder.
+### 🏠 Homepage
+![ShopSphere Homepage](screenshots/homepage.png)
 
 ---
 
