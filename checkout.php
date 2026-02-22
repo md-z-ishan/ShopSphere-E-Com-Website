@@ -67,6 +67,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Insert order
         $pdo->beginTransaction();
         try {
+            // Verify sufficient stock for all items before placing order
+            $stock_check = $pdo->prepare('SELECT stock FROM products WHERE id = ? FOR UPDATE');
+            foreach ($cart_items as $item) {
+                $stock_check->execute([$item['product_id']]);
+                $current_stock = (int)$stock_check->fetchColumn();
+                if ($current_stock < $item['quantity']) {
+                    throw new Exception('Insufficient stock for: ' . $item['name']);
+                }
+            }
+
             $os = $pdo->prepare(
                 'INSERT INTO orders (user_id, total, name, email, address, city, state, zip)
                  VALUES (?,?,?,?,?,?,?,?)'
@@ -78,8 +88,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $oi = $pdo->prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?,?,?,?)');
                 $oi->execute([$order_id, $item['product_id'], $item['quantity'], $item['price']]);
                 // Reduce stock
-                $us = $pdo->prepare('UPDATE products SET stock = GREATEST(0, stock - ?) WHERE id = ?');
-                $us->execute([$item['quantity'], $item['product_id']]);
+                $us = $pdo->prepare('UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?');
+                $us->execute([$item['quantity'], $item['product_id'], $item['quantity']]);
+                if ($us->rowCount() === 0) {
+                    throw new Exception('Stock changed during checkout for: ' . $item['name']);
+                }
             }
 
             // Clear cart
@@ -90,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } catch (Exception $e) {
             $pdo->rollBack();
-            $errors[] = 'Order could not be placed. Please try again.';
+            $errors[] = $e->getMessage() ?: 'Order could not be placed. Please try again.';
         }
     }
 } else {
