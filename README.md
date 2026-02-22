@@ -332,9 +332,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👨‍💻 Author
 
-Project developed and maintained by Puneet Reddy HC
+Project developed and maintained by Md Zishan
 
-For support and inquiries: puneethreddy951@gmail.com
+For support and inquiries: mdzishan24680@gmail.com
 
 ---
 
